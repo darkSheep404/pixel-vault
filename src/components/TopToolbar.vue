@@ -2,6 +2,12 @@
   <header class="top-toolbar pixel-border-bottom">
     <div class="toolbar-content">
       <div class="toolbar-left">
+        <a href="/" class="home-link" title="返回首页">
+          <svg class="home-icon" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 10L10 3L18 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 10V17H8V13H12V17H16V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
         <h1 class="app-title"></h1>
       </div>
       <nav class="toolbar-center">
@@ -164,6 +170,25 @@ export default defineComponent({
   font-size: 12px; /* Match nav-link or set as needed */
   min-width: 40px; /* Ensure decent tap target / visual balance */
   text-align: center;
+}
+
+.home-link {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+  text-decoration: none;
+}
+
+.home-icon {
+  color: var(--text-primary-color);
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  transition: color 0.2s;
+}
+
+.home-link:hover .home-icon {
+  color: var(--primary-color);
 }
 
 /* Responsive adjustments for pixel style (might be less about scaling, more about layout changes) */

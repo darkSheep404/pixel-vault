@@ -87,7 +87,7 @@ export default defineComponent({
   },
   emits: ['close'],
   setup(props, { emit }) {
-    const qrUrl = 'https://darksheep.xyz';
+    const qrUrl = 'https://darksheep.xyz/pixel-vault/';
     const selectedIndex = ref(0);
     const generatedImage = ref(null);
     const isGenerating = ref(false);
