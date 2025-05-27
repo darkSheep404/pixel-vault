@@ -1,83 +1,85 @@
 <template>
-  <div v-if="show" class="modal-overlay-pixel" @click.self="close">
-    <div class="modal-content-pixel pixel-border">
-      <h3 class="pixel-title">生成分享图</h3>
+  <div v-if="show" class="pixel-modal-overlay" @click.self="close">
+    <div class="pixel-modal-content pixel-border">
+      <div class="pixel-modal-header">
+        <span class="pixel-modal-title">生成分享图  {{templates[selectedIndex].name}}</span>
+        <button class="pixel-btn pixel-close-btn" @click="close">✕</button>
+      </div>
       <div v-if="items && items.length > 0">
-        <p class="pixel-text">为 <strong>{{ pageTitle }}</strong> 选择模板:</p>
-        
-        <div class="template-selector-pixel">
-          <div 
-            v-for="(template, index) in templates"
-            :key="index"
-            class="template-preview-container-pixel pixel-border"
-            :class="{ 'selected-pixel': selectedTemplate === template.id }"
-            @click="selectTemplate(template.id)"
+        <div v-if="!generatedImage">
+          <swiper
+            class="pixel-swiper"
+            :slides-per-view="1"
+            :space-between="0"
+            :centered-slides="true"
+            :initial-slide="selectedIndex"
+            @slideChange="onSlideChange"
           >
-            <div :id="`template-preview-${template.id}`" class="template-preview-pixel" :style="getTemplateStyles(template.id, true)">
-              <div class="preview-header-pixel">{{ pageTitle }}</div>
-              <div class="preview-items-count-pixel">{{ items.length }}个项目</div>
-            </div>
-            <p class="template-name-pixel">{{ template.name }}</p>
-          </div>
-        </div>
-
-        <div v-if="selectedTemplate" class="share-card-render-area-pixel pixel-border">
-          <h4 class="pixel-subtitle">预览:</h4>
-          <div :id="`share-card-for-capture-${selectedTemplate}`" class="share-card-template-pixel" :style="getTemplateStyles(selectedTemplate, false)">
-            <div class="share-header-pixel">
-              <h3 class="share-title-pixel">{{ pageTitle }}</h3>
-              <p class="share-subtitle-pixel">{{ new Date().toLocaleDateString('zh-CN') }}</p>
-            </div>
-            
-            <div class="share-items-grid-pixel">
-              <div v-for="(item, index) in items" :key="index" class="share-item-pixel">
-                <img 
-                  v-if="(item.itemImage || item.platformIcon) && getTemplateById(selectedTemplate)?.showImages"
-                  :src="item.itemImage || item.platformIcon" 
-                  :alt="item.itemName || item.platformName" 
-                  class="share-item-image-pixel"
-                  @error="onImageError"
-                >
-                <div class="share-item-content-pixel">
-                  <h4 class="share-item-title-pixel">{{ item.itemName || item.platformName }}</h4>
-                  <p class="share-item-detail-pixel">{{ formatItemDetail(item) }}</p>
+            <swiper-slide v-for="(template, idx) in templates" :key="template.id">
+              <div :id="`share-card-for-capture-${template.id}`" :class="['pixel-share-card', template.id]" :style="getTemplateStyles(template.id)">
+                <div class="pixel-share-header">
+                  <span class="pixel-share-title">{{ pageTitle }}</span>
+                  <span class="pixel-share-date">{{ new Date().toLocaleDateString('zh-CN') }}</span>
+                </div>
+                <div class="pixel-share-items">
+                  <div v-for="(item, index) in items" :key="index" :class="['pixel-share-item', template.id]">
+                    <div class="pixel-item-icon" v-if="getItemIcon(template.id, item)">
+                      <img :src="getItemIcon(template.id, item)" alt="icon" />
+                    </div>
+                    <div class="pixel-share-item-content">
+                      <span class="pixel-share-item-title">{{ item.itemName || item.platformName }}</span>
+                      <span class="pixel-share-item-detail">{{ formatItemDetail(item) }}</span>
+                      <span v-if="item.remark" class="pixel-share-item-remark">{{ item.remark }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="pixel-share-footer">
+                  <img :src="qrImgMap[template.id]" class="pixel-qrcode" alt="二维码" v-if="qrImgMap[template.id]" />
+                  <div class="pixel-qrcode-tip">扫码访问地球Online装备库</div>
                 </div>
               </div>
-            </div>
-            
-            <div class="share-card-footer-pixel">
-              <p>像素风订阅管理</p>
-            </div>
+            </swiper-slide>
+          </swiper>
+          <div class="pixel-swiper-indicator">
+            <span v-for="(template, idx) in templates" :key="template.id" :class="['pixel-dot', {active: selectedIndex === idx}]" />
           </div>
         </div>
-
-        <div v-if="generatedImage" class="generated-image-preview-pixel">
-          <h4 class="pixel-subtitle">生成结果:</h4>
+        <div v-else class="pixel-generated-image-preview" ref="previewRef">
+          <div class="pixel-preview-divider"></div>
+          <span class="pixel-modal-subtitle">生成结果：</span>
           <img :src="generatedImage" alt="生成的分享图" class="pixel-border">
         </div>
-
       </div>
       <div v-else>
-        <p class="pixel-text">没有可分享的项目。</p>
+        <span class="pixel-modal-text">没有可分享的项目。</span>
       </div>
-
-      <div class="modal-actions-pixel">
-        <button @click="close" class="pixel-button cancel-btn">[取消]</button>
-        <button @click="generateImage" :disabled="!selectedTemplate || isGenerating || !items || items.length === 0" class="pixel-button submit-btn">
-          {{ isGenerating ? '生成中...' : '[生成]' }}
+      <div class="pixel-modal-actions">
+        <button @click="close" class="pixel-btn pixel-cancel-btn">[取消]</button>
+        <button v-if="!generatedImage" @click="generateImage" :disabled="isGenerating || !items || items.length === 0" class="pixel-btn pixel-submit-btn">
+          {{ isGenerating ? '生成中...' : '[生成当前风格]' }}
         </button>
-        <a v-if="generatedImage" :href="generatedImage" download="share-image.png" class="pixel-button download-btn">[下载]</a>
+        <a v-if="generatedImage" :href="generatedImage" download="share-image.png" class="pixel-btn pixel-download-btn">[下载]</a>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { defineComponent, ref, watch, nextTick } from 'vue';
+import { defineComponent, ref, watch, nextTick, onMounted } from 'vue';
+import { Swiper, SwiperSlide } from 'swiper/vue';
+import 'swiper/swiper-bundle.css';
 import html2canvas from 'html2canvas';
+import qrcode from 'qrcode';
+
+// 可根据实际情况替换为本地icon
+const stardewIcon = 'https://cdn2.steamgriddb.com/icon/2119b8d43eafcf353e07d7cb5554170b/32/64x64.png';
+const win98Icon = 'https://64.media.tumblr.com/c14680f551bb7173c2ef8c1624f8a13d/591683af0d9ad990-00/s540x810/01a0fc73ccf559c20dd0a67b2b3550c2f0efa4d7.png';
+const pixelIcon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAL8AAACUCAMAAAD1XwjBAAAA/FBMVEX////+AAAAAAD/AADw8PCVAAAKCgpIAACPj4/VAADKAAAPDw+qqqrdAACwsLAfHx/o6OjqAAD/4OBbW1u/v7+CgoL4AAD+U1NvAADyAADS0tJAAAClAADEAACPAABmZmZ1dXWhoaF/AAA3AAAmJiYYAABDQ0P/w8OHAAD/9/dOAAD+PT0nAAD+hIT/fX0uAAD+SEj/7Oz+rKz+JiYwMDD+GBgAISGpkZGVFhalgYGfdXWaQ0NkcHBkAABwenpwVVXGJyf/b29lVla9KipPX1/+kpL/0dH/uLj+YmKkQkIbKChyIiJGIyOsn5+AGBiPS0ufXV00HR1WPj5YNDR/HZQXAAADmUlEQVR4nO3cbVfaMBgGYKH4AtRCFZjUIiLgfJtO0b25Td2czk2nm///v+zDzPNk53QmtClp531/7GmeXC2c00CSTk0hCPJoSmPEXC1j/KBanNFMsaGo1dMtVezWjflrRe2o/K52pUX44Ycffvht+1/Z8HeTPYBLDU/k9Ztp7bylVq5Uy6Wj77QrHd9QoyCGv96lO7HUcrSzwTdQ8vPBae1K5T41Wk3sL+hFy69Zyoa/oOHXrQQ//PDDP55/JSv+0ntq/mEM/5rCv6HvH1Kjj9rq3qLIyem8iC+VPVuIyMUZ9epzKyq1+Ek6qu1vUZv5z+dUSjG+mqNrni3zo1wq+2IzotXmLnfL4Zu+40TWUlwAp8Kl3Iju/+WPqqryS/1zp3v66sgrYX8Vfvjhh/9J+YeW/UcvRba/sH8z4vkr97pM2bLsf3axLyLd/svRtsgoqlefY9u/EHXugarbGIOGLPmNBX744Yf/P/Nf5tG/cECJGvRk3v98dETJp39Savjhhx9++O379/PtH53tinyd2FPXoN9y4Lcb+O0Gfrt5kv7leWP/v8ZUR87/9h73Bz2Rm6tQpGOF71P/4bFLLO2lfPHWPxj0l3cIoL/+gRNv/YlJv431M/DDDz/8pv0TexKbW7+9Whv8ybfvflsk9U+iRT1Vrh/6H9SaMfyloCFy82NNJEzX77RD6urWI0Cc9f9SpP0Xayn7/SXqKuH+C9nP+1+0l28m96eyfwd++OGHf7L+quRPYyjBNdup+Lu0fP2W1rSX28YuwPHLomrllvpqmtvAX6d4fVpUWDHnD6nqtVeivozxpTTo4x12zPl508lhwqGOHf80+1X7V+GHH374c+8vdhKOJKSRCPsHKfuD1abIVYcSi+9z+zsqOpfy80tKkz+KOP+qOCG3T/mmq/zDWP4Oz0948MMPP/xP1F/QfxTzmdb91dpDBu0WRXUBdGIh/Cna2/EH9Hoeb2NFRDE/4LRDOvWOXgrkpvJTfYzM0Dehr/D7PCkUZ1IlpZCpOKvyL7Pf3P87SQO/3cBvN/DbjeyPGkrwsWz6D9dFfrVpzzvPD0g74cv3dOpcdvw8PxDsiX/y+zyUcJZo0uA+oFOzw5dS56+S5J+lg4eZVHOi/Vvstz1UUwR+u4HfbuC3m7/8lBz518X0//kVvXTPP6H1B+YWtaUe6U3J+UFL6bE/41+a6MBvN/DbDfx2A7/dBO5DvF4un78Ikv38BmEt3EdBjKcLAAAAAElFTkSuQmCC';
+const iosIcon = 'https://img.icons8.com/?size=100&id=gINNTdIsWR8p&format=png&color=000000';
 
 export default defineComponent({
   name: 'ShareModal',
+  components: { Swiper, SwiperSlide },
   props: {
     show: Boolean,
     items: Array,
@@ -85,98 +87,134 @@ export default defineComponent({
   },
   emits: ['close'],
   setup(props, { emit }) {
-    const selectedTemplate = ref('pixel_classic'); // Default pixel template
+    const qrUrl = 'https://darksheep.xyz';
+    const selectedIndex = ref(0);
     const generatedImage = ref(null);
     const isGenerating = ref(false);
-
+    const qrImgMap = ref({});
+    const previewRef = ref(null);
     const templates = ref([
       {
-        id: 'pixel_classic',
-        name: '像素经典',
-        showImages: true,
-        backgroundColor: 'var(--pixel-card-bg-light)', 
-        textColor: 'var(--pixel-text-primary-light)',
-        borderColor: 'var(--pixel-border-light)',
-        fontFamily: "'Silkscreen', 'Press Start 2P', sans-serif",
-        gridColumns: 1
+        id: 'pixel',
+        name: '像素游戏风',
+        fontFamily: "'Press Start 2P', 'Silkscreen', monospace",
+        bg: '#222',
+        color: '#fff',
+        border: '4px solid #fff',
+        icon: pixelIcon,
+        qrBg: '#222',
+        qrFg: '#fff',
+        noRadius: true
       },
       {
-        id: 'pixel_grid',
-        name: '像素网格',
-        showImages: true,
-        backgroundColor: 'var(--pixel-bg-light)',
-        textColor: 'var(--pixel-text-primary-light)',
-        borderColor: 'var(--pixel-primary-light)',
-        fontFamily: "'Silkscreen', 'Press Start 2P', sans-serif",
-        gridColumns: 2
+        id: 'stardew',
+        name: '星露谷风格',
+        fontFamily: "'VT323', 'Silkscreen', monospace",
+        bg: 'linear-gradient(135deg, #f7e9b0 60%, #a3d977 100%)',
+        color: '#5b3a1b',
+        border: '3px solid #a3d977',
+        icon: stardewIcon,
+        qrBg: '#fffbe6',
+        qrFg: '#5b3a1b',
+        noRadius: false
       },
       {
-        id: 'pixel_dark',
-        name: '暗色像素',
-        showImages: true,
-        backgroundColor: 'var(--pixel-card-bg-dark)',
-        textColor: 'var(--pixel-text-primary-dark)',
-        borderColor: 'var(--pixel-border-dark)',
-        fontFamily: "'Silkscreen', 'Press Start 2P', sans-serif",
-        gridColumns: 1
+        id: 'ios',
+        name: 'iOS风格',
+        fontFamily: "'SF Pro Display', 'Arial', sans-serif",
+        bg: 'linear-gradient(135deg, #f5f6fa 60%, #d1d8e6 100%)',
+        color: '#222',
+        border: '2px solid #bdbdbd',
+        icon: iosIcon,
+        qrBg: '#fff',
+        qrFg: '#222',
+        noRadius: false
+      },
+      {
+        id: 'win98',
+        name: 'Win98风格',
+        fontFamily: "'Consolas', 'Courier New', monospace",
+        bg: '#c3c7cb',
+        color: '#222',
+        border: '3px solid #000',
+        icon: win98Icon,
+        qrBg: '#fff',
+        qrFg: '#222',
+        noRadius: false,
+        win98: true
       }
     ]);
+
+    // 生成所有模板的二维码图片
+    const generateAllQRCodes = async () => {
+      for (const t of templates.value) {
+        qrImgMap.value[t.id] = await qrcode.toDataURL(qrUrl, {
+          margin: 0,
+          color: {
+            dark: t.qrFg,
+            light: t.qrBg
+          },
+          width: 64
+        });
+      }
+    };
+
+    onMounted(() => {
+      generateAllQRCodes();
+    });
 
     watch(() => props.show, (newShow) => {
       if (newShow) {
         generatedImage.value = null;
+        generateAllQRCodes();
       }
     });
 
     const getTemplateById = (id) => templates.value.find(t => t.id === id);
 
-    const getTemplateStyles = (templateId, isPreview) => {
-      const template = getTemplateById(templateId);
-      if (!template) return {};
-      
-      let styles = {
-        backgroundColor: template.backgroundColor,
-        color: template.textColor,
-        border: `1px solid ${template.borderColor}`,
-        padding: isPreview ? '4px' : '12px',
-        fontFamily: template.fontFamily,
-        width: isPreview ? '120px' : '100%', 
-        minHeight: isPreview ? '80px' : 'auto',
-        margin: isPreview ? '4px' : '0 auto',
+    const getTemplateStyles = (templateId) => {
+      const t = getTemplateById(templateId);
+      if (!t) return {};
+      return {
+        background: t.bg,
+        color: t.color,
+        border: t.border,
+        fontFamily: t.fontFamily,
+        borderRadius: t.noRadius ? '0' : '8px',
+        boxShadow: t.win98 ? '4px 4px 0 #fff, 8px 8px 0 #000' : 'none',
+        padding: '0',
+        width: '100%',
+        minHeight: '320px',
+        margin: '0 auto',
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         textAlign: 'center',
-        imageRendering: 'pixelated',
+        transition: 'all 0.3s',
+        position: 'relative',
       };
-      
-      if (isPreview) {
-        styles.transform = 'scale(0.9)';
-        styles.transformOrigin = 'top left';
-      }
-      
-      return styles;
     };
 
-    const selectTemplate = (templateId) => {
-      selectedTemplate.value = templateId;
+    const getQrBg = (templateId) => getTemplateById(templateId)?.qrBg || '#fff';
+    const getQrFg = (templateId) => getTemplateById(templateId)?.qrFg || '#222';
+
+    const onSlideChange = (swiper) => {
+      selectedIndex.value = swiper.activeIndex;
       generatedImage.value = null;
     };
 
-    const formatDate = (dateString) => {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const getItemIcon = (templateId, item) => {
+      const t = getTemplateById(templateId);
+      if (t && t.icon) return t.icon;
+      return '';
     };
 
     const formatItemDetail = (item) => {
       if (item.cost) {
         if (item.subscriptionType) {
-          // 订阅项目
           return `${item.cost}元${item.billingCycle === 'monthly' ? '/月' : (item.billingCycle === 'annually' ? '/年' : '')}`;
         } else {
-          // 购买项目
           return `${item.cost}元`;
         }
       }
@@ -184,52 +222,32 @@ export default defineComponent({
     };
 
     const onImageError = (event) => {
-      console.error("Error loading image for share card:", event.target.src);
       if (event.target) event.target.style.display = 'none';
     };
 
     const generateImage = async () => {
-      if (!selectedTemplate.value || !props.items || props.items.length === 0) return;
+      const template = templates.value[selectedIndex.value];
+      if (!template || !props.items || props.items.length === 0) return;
       isGenerating.value = true;
       generatedImage.value = null;
-
       await nextTick();
-
-      const elementToCapture = document.getElementById(`share-card-for-capture-${selectedTemplate.value}`);
+      const elementToCapture = document.getElementById(`share-card-for-capture-${template.id}`);
       if (elementToCapture) {
         try {
-          const currentTheme = document.documentElement.classList.contains('dark-theme') ? 'dark' : 'light';
-          const templateDetails = getTemplateById(selectedTemplate.value);
-          let bgColorToUse = templateDetails.backgroundColor;
-          
-          // Resolve CSS variables for html2canvas
-          if (bgColorToUse.startsWith('var(')) {
-            bgColorToUse = getComputedStyle(elementToCapture).getPropertyValue(bgColorToUse.slice(4, -1)).trim();
-          }
-
           const canvas = await html2canvas(elementToCapture, {
             useCORS: true,
             allowTaint: true,
-            backgroundColor: bgColorToUse || (currentTheme === 'dark' ? '#1E1E1E' : '#FFFFFF'),
-            logging: true,
-            imageTimeout: 15000,
+            backgroundColor: getTemplateById(template.id).bg,
             scale: 2,
-            onclone: (clonedDoc) => {
-              const shareCard = clonedDoc.querySelector('.share-card-template-pixel');
-              if(shareCard) {
-                shareCard.style.margin = '0';
-              }
-              const images = clonedDoc.querySelectorAll('img');
-              images.forEach(img => {
-                img.style.imageRendering = 'pixelated';
-                const originalImg = document.getElementById(img.id || '');
-                if(originalImg) img.src = originalImg.src;
-              });
-            }
+            logging: false,
           });
           generatedImage.value = canvas.toDataURL('image/png');
+          await nextTick();
+          // 自动滚动到预览区
+          if (previewRef.value) {
+            previewRef.value.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         } catch (error) {
-          console.error('Error generating image with html2canvas:', error);
           alert('生成分享图失败，请检查控制台。');
         }
       }
@@ -242,244 +260,355 @@ export default defineComponent({
     };
 
     return {
-      templates, selectedTemplate, generatedImage, isGenerating,
-      selectTemplate, generateImage, close, formatDate, getTemplateStyles, 
-      getTemplateById, onImageError, formatItemDetail
+      templates, selectedIndex, generatedImage, isGenerating,
+      generateImage, close, getTemplateStyles, getTemplateById, onImageError, formatItemDetail, onSlideChange, qrImgMap, getItemIcon, previewRef
     };
   },
 });
 </script>
 
 <style scoped>
-/* Pixel Art Styles for ShareModal */
-.modal-overlay-pixel {
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+.pixel-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  display: flex; justify-content: center; align-items: center;
+  z-index: 2000;
+  padding: 0;
+}
+.pixel-modal-content {
+  background: #181818;
+  font-family: 'Press Start 2P', 'Silkscreen', monospace;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  width: 98vw; max-width: 420px;
+  max-height: 96vh; overflow-y: auto;
+  color: #fff;
+  position: relative;
+  border: 8px solid #fff;
+  image-rendering: pixelated;
+}
+.pixel-border {
+  border: 8px solid #fff;
+  box-shadow: 0 0 0 4px #000, 0 0 0 8px #8f99a8;
+  border-radius: 0;
+}
+.pixel-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px 0 16px;
+  border-bottom: 4px solid #8f99a8;
+}
+.pixel-modal-title {
+  font-size: 16px;
+  font-family: 'Press Start 2P', 'Silkscreen', monospace;
+  color: #fff;
+  letter-spacing: 1px;
+}
+.pixel-btn {
+  font-family: 'Press Start 2P', 'Silkscreen', monospace;
+  background: #fff;
+  color: #222;
+  border: 4px solid #8f99a8;
+  border-radius: 0;
+  padding: 8px 16px;
+  font-size: 14px;
+  margin: 0 4px;
+  cursor: pointer;
+  image-rendering: pixelated;
+  box-shadow: 2px 2px 0 #000;
+  transition: background 0.1s;
+}
+.pixel-btn:active {
+  background: #8f99a8;
+  color: #fff;
+}
+.pixel-close-btn {
+  padding: 4px 10px;
+  font-size: 18px;
+  background: #fff;
+  color: #8f99a8;
+  border: 4px solid #8f99a8;
+  box-shadow: 2px 2px 0 #000;
+}
+.pixel-modal-subtitle {
+  font-size: 13px;
+  color: #fff;
+  font-family: 'Press Start 2P', 'Silkscreen', monospace;
+  margin: 8px 0 4px 0;
+  display: block;
+}
+.pixel-modal-text {
+  font-size: 13px;
+  color: #fff;
+  font-family: 'Press Start 2P', 'Silkscreen', monospace;
+  margin: 12px 0;
+  display: block;
+  text-align: center;
+}
+.pixel-swiper {
   width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  margin: 0 auto 8px auto;
+  padding-bottom: 8px;
+}
+.pixel-swiper-indicator {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
-  padding: 8px;
-}
-
-.modal-content-pixel {
-  background-color: var(--app-bg-color);
-  padding: 8px;
-  border: 1px solid var(--border-color);
-  width: 95%;
-  max-width: 360px;
-  max-height: 90vh;
-  overflow-y: auto;
-  color: var(--text-primary-color);
-  font-family: 'Silkscreen', 'Press Start 2P', sans-serif;
-}
-
-.pixel-title {
-  font-family: 'Press Start 2P', 'Silkscreen', sans-serif;
-  font-size: 16px;
-  color: var(--primary-color);
-  margin-top: 0;
-  margin-bottom: 12px;
-  text-align: center;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 8px;
-}
-
-.pixel-subtitle {
-  font-family: 'Press Start 2P', 'Silkscreen', sans-serif;
-  font-size: 12px;
-  margin-top: 12px;
-  margin-bottom: 6px;
-}
-
-.pixel-text {
-  font-size: 12px;
-  line-height: 1.4;
   margin-bottom: 8px;
+  gap: 4px;
 }
-
-.template-selector-pixel {
+.pixel-dot {
+  width: 12px; height: 12px;
+  background: #fff;
+  border: 2px solid #8f99a8;
+  display: inline-block;
+  margin: 0 2px;
+  image-rendering: pixelated;
+}
+.pixel-dot.active {
+  background: #8f99a8;
+}
+.pixel-share-card {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  min-height: 320px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-  justify-content: center;
-}
-
-.template-preview-container-pixel {
-  cursor: pointer;
-  border: 1px solid var(--border-color);
-  padding: 4px;
-  text-align: center;
-  background-color: var(--card-bg-color);
-}
-
-.template-preview-container-pixel.selected-pixel {
-  border: 2px solid var(--accent-color);
-}
-
-.template-preview-pixel {
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0;
   overflow: hidden;
   position: relative;
+  border-radius: 0;
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 4px #000;
   image-rendering: pixelated;
+}
+.pixel-share-card.pixel {
+  background: #222;
+  color: #fff;
+  font-family: 'Press Start 2P', 'Silkscreen', monospace;
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 4px #000;
+}
+.pixel-share-card.stardew {
+  background: linear-gradient(135deg, #f7e9b0 60%, #a3d977 100%);
+  color: #5b3a1b;
+  font-family: 'VT323', 'Silkscreen', monospace;
+  border: 4px solid #a3d977;
+  box-shadow: 0 0 0 4px #5b3a1b;
+}
+.pixel-share-card.ios {
+  background: linear-gradient(135deg, #f5f6fa 60%, #d1d8e6 100%);
+  color: #222;
+  font-family: 'SF Pro Display', 'Arial', sans-serif;
+  border: 4px solid #bdbdbd;
+  box-shadow: 0 0 0 4px #aaa;
+}
+.pixel-share-card.win98 {
+  background: #c3c7cb;
+  color: #222;
+  font-family: 'Consolas', 'Courier New', monospace;
+  border: 4px solid #000;
+  box-shadow: 4px 4px 0 #fff, 8px 8px 0 #000;
+}
+.pixel-share-header {
+  text-align: center;
+  margin-bottom: 8px;
+  padding: 16px 0 8px 0;
+  border-bottom: 4px solid #8f99a8;
+  width: 100%;
+  font-size: 15px;
+  font-family: inherit;
+}
+.pixel-share-title {
+  font-size: 18px;
+  font-family: inherit;
+  color: inherit;
+  letter-spacing: 1px;
+  display: block;
+}
+.pixel-share-date {
+  font-size: 11px;
+  color: #aaa;
+  font-family: inherit;
+  display: block;
+}
+.pixel-share-items {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 0;
+  align-items: center;
+}
+.pixel-share-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  width: 90%;
+  margin: 0 auto;
+  background: rgba(255,255,255,0.10);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  padding: 8px 12px;
+  min-width: 0;
+  border-radius: 0;
+  border: 2px solid #fff;
+  font-family: inherit;
+  color: inherit;
+  image-rendering: pixelated;
+}
+.pixel-share-item.pixel {
+  background: #222;
+  color: #fff;
+  border: 2px solid #fff;
+  font-family: 'Press Start 2P', 'Silkscreen', monospace;
+}
+.pixel-share-item.stardew {
+  background: #f7e9b0;
+  color: #5b3a1b;
+  border: 2px solid #a3d977;
+  font-family: 'VT323', 'Silkscreen', monospace;
+}
+.pixel-share-item.ios {
+  background: #fff;
+  color: #222;
+  border: 2px solid #bdbdbd;
+  font-family: 'SF Pro Display', 'Arial', sans-serif;
+}
+.pixel-share-item.win98 {
+  background: #e0e7ef;
+  color: #222;
+  border: 2px solid #000;
+  font-family: 'Consolas', 'Courier New', monospace;
+  box-shadow: 2px 2px 0 #fff, 4px 4px 0 #000;
+}
+.pixel-item-icon {
+  width: 28px;
+  height: 28px;
+  margin-right: 10px;
+  display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.preview-header-pixel {
-  font-size: 10px;
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
-.preview-items-count-pixel {
-  font-size: 8px;
-}
-
-.template-name-pixel {
-  font-size: 10px;
-  margin-top: 4px;
-  color: var(--text-secondary-color);
-}
-
-.share-card-render-area-pixel {
-  margin-top: 8px;
-  margin-bottom: 8px;
-  border: 1px solid var(--border-color);
-  padding: 8px;
-  background-color: var(--app-bg-color); 
-}
-
-.share-card-template-pixel {
-  box-shadow: none;
   image-rendering: pixelated;
 }
-
-.share-header-pixel {
-  text-align: center;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.share-title-pixel {
-  font-size: 16px;
-  font-weight: normal;
-  margin: 6px 0;
-}
-
-.share-subtitle-pixel {
-  font-size: 10px;
-  margin: 3px 0;
-}
-
-.share-items-grid-pixel {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
+.pixel-item-icon img {
   width: 100%;
-  margin-bottom: 12px;
-}
-
-.share-item-pixel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border: 1px solid var(--border-color);
-  padding: 6px;
-  background-color: var(--card-bg-color);
-}
-
-.share-item-image-pixel {
-  max-width: 80%;
-  height: 48px;
+  height: 100%;
   object-fit: contain;
-  margin-bottom: 6px;
   image-rendering: pixelated;
 }
-
-.share-item-content-pixel {
+.pixel-share-item-content {
   width: 100%;
-  text-align: center;
+  text-align: left;
+  font-family: inherit;
 }
-
-.share-item-title-pixel {
-  font-size: 12px;
-  font-weight: normal;
-  margin: 4px 0;
+.pixel-share-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 2px 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: inherit;
 }
-
-.share-item-detail-pixel {
-  font-size: 10px;
+.pixel-share-item-detail {
+  font-size: 12px;
+  color: #8f99a8;
   margin: 2px 0;
+  font-family: inherit;
 }
-
-.share-card-footer-pixel {
+.pixel-share-item-remark {
+  font-size: 12px;
+  color: #f59e42;
+  margin: 2px 0 0 0;
+  word-break: break-all;
+  white-space: pre-line;
+  font-family: inherit;
+}
+.pixel-share-footer {
   margin-top: auto;
-  padding-top: 8px;
-  font-size: 8px;
-  opacity: 0.8;
+  padding: 12px 0 8px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-top: 4px solid #8f99a8;
+  background: transparent;
   width: 100%;
-  border-top: 1px solid var(--border-color);
-  text-align: center;
 }
-
-.generated-image-preview-pixel {
+.pixel-qrcode {
+  margin: 0 auto 4px auto;
+  border-radius: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+  image-rendering: pixelated;
+}
+.pixel-qrcode-tip {
+  font-size: 11px;
+  color: #8f99a8;
+  margin-top: 2px;
+  font-family: 'Press Start 2P', 'Silkscreen', monospace;
+}
+.pixel-generated-image-preview {
   margin-top: 12px;
   text-align: center;
 }
-
-.generated-image-preview-pixel img {
+.pixel-generated-image-preview img {
   max-width: 100%;
-  border: 1px solid var(--border-color);
+  border: 4px solid #fff;
   image-rendering: pixelated;
 }
-
-.modal-actions-pixel {
+.pixel-modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 12px;
   flex-wrap: wrap;
-  border-top: 1px solid var(--border-color);
+  border-top: 4px solid #8f99a8;
   padding-top: 8px;
 }
-
-.modal-actions-pixel .pixel-button {
-  padding: 6px 10px;
-  font-size: 12px;
+.pixel-modal-actions .pixel-btn {
+  padding: 8px 18px;
+  font-size: 14px;
+  border-radius: 0;
+  border: 4px solid #8f99a8;
+  font-family: 'Press Start 2P', 'Silkscreen', monospace;
+  background: #fff;
+  color: #8f99a8;
+  box-shadow: 2px 2px 0 #000;
+  cursor: pointer;
+  margin: 0 4px;
 }
-
-.modal-actions-pixel .cancel-btn {
-  background-color: var(--text-secondary-color);
-  color: var(--app-bg-color);
-  border-color: var(--text-secondary-color);
+.pixel-modal-actions .pixel-btn:active {
+  background: #8f99a8;
+  color: #fff;
 }
-
-.dark-theme .modal-actions-pixel .cancel-btn {
-  color: var(--pixel-bg-dark);
+.pixel-modal-actions .pixel-btn.pixel-submit-btn {
+  background: #8f99a8;
+  color: #fff;
 }
-
-.modal-actions-pixel .submit-btn:disabled {
-  background-color: var(--border-color);
-  color: var(--text-secondary-color);
+.pixel-modal-actions .pixel-btn:disabled {
+  background: #e0e7ef;
+  color: #aaa;
   cursor: default;
-  border-color: var(--text-secondary-color);
 }
-
-/* 响应式调整 */
-@media (min-width: 600px) {
-  .share-items-grid-pixel {
-    grid-template-columns: repeat(2, 1fr);
+@media (max-width: 480px) {
+  .pixel-modal-content {
+    max-width: 99vw;
+    padding: 0;
   }
+  .pixel-share-card {
+    max-width: 99vw;
+    border-radius: 0;
+  }
+}
+.pixel-preview-divider {
+  border-top: 2px dashed #8f99a8;
+  margin: 16px 0 8px 0;
 }
 </style>
