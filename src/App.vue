@@ -5,7 +5,7 @@
       <router-view />
     </main>
     <footer class="pixel-footer">
-      <p>个人订阅与购买管理 &copy; 2025</p>
+      <p>地球Online装备库 &copy; 2025</p>
     </footer>
   </div>
 </template>

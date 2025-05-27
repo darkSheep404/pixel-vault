@@ -1,7 +1,7 @@
 <template>
   <div class="view-container-pixel">
     <div class="view-header-pixel pixel-border-bottom">
-      <h2 class="pixel-page-title">购买管理</h2>
+      <h2 class="pixel-page-title">装备库 现实好物</h2>
       <div class="view-header-actions-pixel">
         <button @click="openShareAllModal" class="pixel-button share-all-btn-pixel">[分享全部]</button>
         <button @click="openAddModal" class="pixel-button add-btn-pixel">[添加]</button>
@@ -23,6 +23,7 @@
         @delete="confirmDelete(item.id)"
         @view-details="openDetailsModal(item.id)"
         @share="openShareModal(item)"
+        @edit-remark="openRemarkModal(item.id)"
       />
     </div>
 
@@ -44,7 +45,7 @@
             <input type="date" id="purchaseDate" v-model="currentItem.purchaseDate" required class="pixel-input">
           </div>
           <div>
-            <label for="evaluation" class="pixel-label">评价:</label>
+            <label for="evaluation" class="pixel-label">备注:</label>
             <textarea id="evaluation" v-model="currentItem.evaluation" rows="2" class="pixel-input pixel-textarea"></textarea>
           </div>
           <div>
@@ -64,6 +65,18 @@
       </div>
     </div>
 
+    <!-- 备注编辑弹窗 -->
+    <div v-if="showRemarkModal" class="modal-overlay-pixel" @click.self="closeRemarkModal">
+      <div class="modal-content-pixel pixel-border">
+        <h3 class="pixel-title">[编辑备注]</h3>
+        <textarea v-model="remarkDraft" rows="3" class="pixel-input pixel-textarea" placeholder="请输入备注..." autofocus></textarea>
+        <div class="modal-actions-pixel">
+          <button @click="closeRemarkModal" class="pixel-button cancel-btn">[取消]</button>
+          <button @click="saveRemark" class="pixel-button submit-btn">[保存]</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Details Modal -->
     <div v-if="showDetailsPopup && selectedPurchaseDetails" class="modal-overlay-pixel" @click.self="closeDetailsModal">
         <div class="modal-content-pixel details-popup-pixel pixel-border">
@@ -75,7 +88,7 @@
                 <p><strong>物品:</strong> {{ selectedPurchaseDetails.itemName }}</p>
                 <p><strong>费用:</strong> {{ selectedPurchaseDetails.cost }} 元</p>
                 <p><strong>购买:</strong> {{ formatDate(selectedPurchaseDetails.purchaseDate) }}</p>
-                <p v-if="selectedPurchaseDetails.evaluation"><strong>评价:</strong> "{{ selectedPurchaseDetails.evaluation }}"</p>
+                <p v-if="selectedPurchaseDetails.evaluation"><strong>备注:</strong> "{{ selectedPurchaseDetails.evaluation }}"</p>
             </div>
             <button @click="closeDetailsModal" class="pixel-button close-details-btn-pixel">[关闭]</button>
         </div>
@@ -91,7 +104,6 @@
 </template>
 
 <script>
-// Script remains largely the same
 import { defineComponent, ref, computed, onMounted } from 'vue';
 import { usePurchaseStore } from '../store/purchases';
 import ItemCard from '../components/ItemCard.vue';
@@ -119,6 +131,11 @@ export default defineComponent({
     const showSingleSharePopup = ref(false);
     const showShareAllPopup = ref(false);
     const itemToShare = ref(null);
+
+    // 备注编辑相关
+    const showRemarkModal = ref(false);
+    const remarkDraft = ref('');
+    const remarkEditId = ref(null);
 
     onMounted(async () => {
       isLoading.value = true;
@@ -175,6 +192,30 @@ export default defineComponent({
         selectedPurchaseDetails.value = null;
     };
 
+    // 备注编辑弹窗逻辑
+    const openRemarkModal = (id) => {
+      const item = store.getPurchaseById(id);
+      if (item) {
+        remarkEditId.value = id;
+        remarkDraft.value = item.evaluation || '';
+        showRemarkModal.value = true;
+      }
+    };
+    const closeRemarkModal = () => {
+      showRemarkModal.value = false;
+      remarkEditId.value = null;
+      remarkDraft.value = '';
+    };
+    const saveRemark = () => {
+      if (!remarkEditId.value) return;
+      const item = store.getPurchaseById(remarkEditId.value);
+      if (item) {
+        const updated = { ...item, evaluation: remarkDraft.value };
+        store.updatePurchase(updated);
+      }
+      closeRemarkModal();
+    };
+
     const openShareModal = (item) => {
         itemToShare.value = item;
         showSingleSharePopup.value = true;
@@ -218,7 +259,9 @@ export default defineComponent({
       openAddModal, openEditModal, closeModal, handleSubmit, confirmDelete,
       showDetailsPopup, selectedPurchaseDetails, openDetailsModal, closeDetailsModal, formatDate,
       handleImageUpload, showSingleSharePopup, itemToShare, openShareModal, closeSingleShareModal,
-      showShareAllPopup, openShareAllModal, closeShareAllModal
+      showShareAllPopup, openShareAllModal, closeShareAllModal,
+      // 备注相关
+      showRemarkModal, remarkDraft, openRemarkModal, closeRemarkModal, saveRemark
     };
   },
 });

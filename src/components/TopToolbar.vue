@@ -2,11 +2,11 @@
   <header class="top-toolbar pixel-border-bottom">
     <div class="toolbar-content">
       <div class="toolbar-left">
-        <h1 class="app-title">{{ appTitle }}</h1>
+        <h1 class="app-title"></h1>
       </div>
       <nav class="toolbar-center">
-        <router-link to="/" class="nav-link pixel-button" active-class="active">订阅管理</router-link>
-        <router-link to="/purchases" class="nav-link pixel-button" active-class="active">购买管理</router-link>
+        <router-link to="/" class="nav-link pixel-button" active-class="active">APP会员</router-link>
+        <router-link to="/purchases" class="nav-link pixel-button" active-class="active">现实好物</router-link>
       </nav>
       <div class="toolbar-right">
         <button @click="toggleTheme" class="theme-toggle-btn pixel-button">
@@ -30,9 +30,9 @@ export default defineComponent({
 
     const updateTitle = () => {
       if (route.path === '/purchases') {
-        appTitle.value = '购买管理';
+        appTitle.value = '现实好物';
       } else {
-        appTitle.value = '订阅管理';
+        appTitle.value = 'APP会员';
       }
     };
 

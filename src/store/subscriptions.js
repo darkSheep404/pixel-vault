@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs
 // 默认订阅数据
 const DEFAULT_SUBSCRIPTIONS = [
   {
-    "platformName": "b站",
+    "platformName": "B站",
     "subscriptionType": "大会员",
     "cost": 15,
     "billingCycle": "monthly",

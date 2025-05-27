@@ -18,13 +18,14 @@
       </p>
       <p v-if="item.totalSpent !== undefined" class="item-detail">总消费: {{ item.totalSpent?.toFixed(2) }} 元</p>
       <p v-if="item.spentIn2025 !== undefined" class="item-detail">2025消费: {{ item.spentIn2025?.toFixed(2) }} 元</p>
-      <p v-if="item.evaluation" class="item-evaluation">评价: "{{ item.evaluation }}"</p>
+      <p v-if="item.evaluation" class="item-evaluation">备注: "{{ item.evaluation }}"</p>
     </div>
     <div class="item-card-actions">
       <button @click="$emit('edit', item.id)" class="action-btn edit-btn pixel-button">[编]</button>
       <button @click="$emit('delete', item.id)" class="action-btn delete-btn pixel-button">[删]</button>
       <button v-if="showDetailsButton" @click="$emit('view-details', item.id)" class="action-btn details-btn pixel-button">[详]</button>
       <button @click="$emit('share', item)" class="action-btn share-btn pixel-button">[享]</button>
+      <button @click="$emit('edit-remark', item.id)" class="action-btn remark-btn pixel-button">[备注]</button>
     </div>
   </div>
 </template>
@@ -44,7 +45,7 @@ export default defineComponent({
       default: false,
     }
   },
-  emits: ['edit', 'delete', 'view-details', 'share'],
+  emits: ['edit', 'delete', 'view-details', 'share', 'edit-remark'],
   setup() {
     const formatDate = (dateString) => {
       if (!dateString) return '';
@@ -200,6 +201,17 @@ export default defineComponent({
     font-size: 9px;
     padding: 3px 5px;
   }
+}
+
+.action-btn.remark-btn {
+  background-color: var(--accent-color);
+  color: var(--pixel-text-primary-light);
+  border-color: var(--accent-color);
+}
+.action-btn.remark-btn:hover {
+  background-color: var(--pixel-text-primary-light);
+  color: var(--accent-color);
+  border-color: var(--accent-color);
 }
 </style>
 
