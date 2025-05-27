@@ -3,8 +3,11 @@
     <div class="view-header-pixel pixel-border-bottom">
       <h2 class="pixel-page-title">装备库 APP会员</h2>
       <div class="view-header-actions-pixel">
-        <button @click="openShareAllModal" class="pixel-button share-all-btn-pixel">[分享全部]</button>
+        <button @click="openShareAllModal" class="pixel-button share-all-btn-pixel">[分享图]</button>
         <button @click="openAddModal" class="pixel-button add-btn-pixel">[添加]</button>
+        <button @click="handleExport" class="pixel-button export-btn-pixel">[导出]</button>
+        <button @click="triggerImport" class="pixel-button import-btn-pixel">[导入]</button>
+        <input ref="importInput" type="file" accept=".xlsx,.xls" style="display:none" @change="handleImport" />
       </div>
     </div>
 
@@ -122,13 +125,23 @@
     <!-- 批量分享 -->
     <ShareModal v-if="showShareAllPopup" :show="showShareAllPopup" :items="subscriptions" :pageTitle="'订阅管理'" @close="closeShareAllModal" />
 
+    <!-- 导入成功提示弹窗 -->
+    <div v-if="showImportSuccess" class="pixel-modal-overlay">
+      <div class="pixel-modal-content pixel-border">
+        <div class="pixel-modal-title">[导入成功]</div>
+        <div class="pixel-modal-body">数据已成功导入！</div>
+        <button class="pixel-button" @click="showImportSuccess = false">[关闭]</button>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script>
-// Script remains largely the same, only template and style changes for pixel art
 import { defineComponent, ref, computed, onMounted } from 'vue';
+import { usePurchaseStore } from '../store/purchases';
 import { useSubscriptionStore } from '../store/subscriptions';
+import { exportAllToExcel, importAllFromExcel } from '../utils/excel';
 import ItemCard from '../components/ItemCard.vue';
 import ShareModal from '../components/ShareModal.vue';
 
@@ -149,6 +162,7 @@ export default defineComponent({
   components: { ItemCard, ShareModal },
   setup() {
     const store = useSubscriptionStore();
+    const purchaseStore = usePurchaseStore();
     const isLoading = ref(false);
     const showModal = ref(false);
     const isEditing = ref(false);
@@ -158,11 +172,15 @@ export default defineComponent({
     const showSingleSharePopup = ref(false);
     const showShareAllPopup = ref(false);
     const itemToShare = ref(null);
+    const importInput = ref(null);
 
     // 备注编辑相关
     const showRemarkModal = ref(false);
     const remarkDraft = ref('');
     const remarkEditId = ref(null);
+
+    // 导入成功提示弹窗相关
+    const showImportSuccess = ref(false);
 
     onMounted(async () => {
       isLoading.value = true;
@@ -201,7 +219,6 @@ export default defineComponent({
     };
 
     const confirmDelete = (id) => {
-      // Using simple confirm for pixel style, can be replaced with custom pixel modal
       if (window.confirm('确定删除?')) {
         store.deleteSubscription(id);
       }
@@ -282,14 +299,33 @@ export default defineComponent({
       }
     };
 
+    const handleExport = () => {
+      exportAllToExcel(store.subscriptions, purchaseStore.purchases);
+    };
+
+    const triggerImport = () => {
+      importInput.value && importInput.value.click();
+    };
+
+    const handleImport = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      importAllFromExcel(file, ({ subscriptions, purchases }) => {
+        store.replaceAll(subscriptions);
+        purchaseStore.replaceAll(purchases);
+        showImportSuccess.value = true;
+      });
+      e.target.value = '';
+    };
+
     return {
       subscriptions, isLoading, showModal, isEditing, currentSubscription,
       openAddModal, openEditModal, closeModal, handleSubmit, confirmDelete,
       showDetailsPopup, selectedSubscriptionDetails, openDetailsModal, closeDetailsModal, formatDate,
       handleImageUpload, showSingleSharePopup, itemToShare, openShareModal, closeSingleShareModal,
       showShareAllPopup, openShareAllModal, closeShareAllModal,
-      // 备注相关
-      showRemarkModal, remarkDraft, openRemarkModal, closeRemarkModal, saveRemark
+      showRemarkModal, remarkDraft, openRemarkModal, closeRemarkModal, saveRemark,
+      handleExport, triggerImport, handleImport, importInput, showImportSuccess
     };
   },
 });
@@ -323,20 +359,18 @@ export default defineComponent({
   margin: 0;
 }
 
-.add-btn-pixel, .share-all-btn-pixel {
-  /* Uses global .pixel-button styles */
+.add-btn-pixel, .share-all-btn-pixel, .export-btn-pixel, .import-btn-pixel {
   font-size: 12px;
   padding: 6px 10px;
 }
 
 .items-grid-pixel {
   display: grid;
-  /* For mobile, usually single column. For larger screens, can adjust */
-  grid-template-columns: 1fr; 
+  grid-template-columns: 1fr;
   gap: 8px;
 }
 
-@media (min-width: 600px) { /* Example breakpoint for 2 columns */
+@media (min-width: 600px) {
   .items-grid-pixel {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
@@ -359,7 +393,6 @@ export default defineComponent({
   opacity: 0.7;
 }
 
-/* Modal styles (reusing from ShareModal pixel styles where applicable) */
 .modal-overlay-pixel {
   position: fixed;
   top: 0;
@@ -370,7 +403,7 @@ export default defineComponent({
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Ensure it's below ShareModal if both can appear, or manage z-index carefully */
+  z-index: 1000;
   padding: 8px;
 }
 
@@ -379,7 +412,7 @@ export default defineComponent({
   padding: 12px;
   border: 1px solid var(--border-color);
   width: 95%;
-  max-width: 320px; /* Consistent with ShareModal */
+  max-width: 320px;
   max-height: 90vh;
   overflow-y: auto;
   color: var(--text-primary-color);
@@ -416,7 +449,7 @@ export default defineComponent({
   width: 100%;
   padding: 6px;
   border: 1px solid var(--border-color);
-  background-color: var(--card-bg-color); /* Or app-bg-color */
+  background-color: var(--card-bg-color);
   color: var(--text-primary-color);
   font-family: 'Silkscreen', 'Press Start 2P', sans-serif;
   font-size: 12px;
@@ -441,14 +474,13 @@ export default defineComponent({
 }
 
 .pixel-checkbox {
-  /* Using global checkbox style from style.css */
   vertical-align: middle;
 }
 
 .image-preview-modal-pixel {
     margin-top: 6px;
     max-width: 100%;
-    height: 64px; /* Fixed height for preview */
+    height: 64px;
     overflow: hidden;
     display: flex;
     justify-content: center;
@@ -484,14 +516,12 @@ export default defineComponent({
     color: var(--pixel-bg-dark);
 }
 
-/* Details Popup Styles */
 .details-popup-pixel {
-    /* Uses .modal-content-pixel base */
 }
 
 .details-image-container-pixel {
     width: 100%;
-    height: 128px; /* Fixed height */
+    height: 128px;
     margin-bottom: 8px;
     display: flex;
     justify-content: center;
@@ -511,13 +541,12 @@ export default defineComponent({
 }
 .details-popup-pixel .pixel-text strong {
     color: var(--primary-color);
-    font-weight: normal; /* Pixel fonts often have one weight */
+    font-weight: normal;
 }
 
 .close-details-btn-pixel {
     display: block;
     margin: 12px auto 0;
-    /* Uses global .pixel-button */
     background-color: var(--accent-color);
     color: var(--pixel-text-primary-light);
     border-color: var(--accent-color);
@@ -535,4 +564,34 @@ export default defineComponent({
   border-bottom: 1px solid var(--border-color);
 }
 
+.pixel-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.pixel-modal-content {
+  background: var(--app-bg-color);
+  border: 2px solid var(--primary-color);
+  padding: 24px 32px;
+  min-width: 220px;
+  text-align: center;
+  font-family: 'Press Start 2P', 'Silkscreen', sans-serif;
+  color: var(--primary-color);
+  box-shadow: 0 0 0 4px var(--border-color);
+}
+.pixel-modal-title {
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+.pixel-modal-body {
+  font-size: 14px;
+  margin-bottom: 16px;
+}
 </style>

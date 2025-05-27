@@ -153,5 +153,9 @@ export const useSubscriptionStore = defineStore('subscriptions', {
       this.subscriptions = this.subscriptions.filter(sub => sub.id !== id);
       this.saveSubscriptions();
     },
+    replaceAll(newList) {
+      this.subscriptions = Array.isArray(newList) ? newList : [];
+      this.saveSubscriptions();
+    },
   },
 });

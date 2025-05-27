@@ -23,8 +23,7 @@
     <div class="item-card-actions">
       <button @click="$emit('edit', item.id)" class="action-btn edit-btn pixel-button">[编]</button>
       <button @click="$emit('delete', item.id)" class="action-btn delete-btn pixel-button">[删]</button>
-      <button v-if="showDetailsButton" @click="$emit('view-details', item.id)" class="action-btn details-btn pixel-button">[详]</button>
-      <button @click="$emit('share', item)" class="action-btn share-btn pixel-button">[享]</button>
+      <button @click="$emit('view-details', item.id)" class="action-btn details-btn pixel-button">[详]</button>
       <button @click="$emit('edit-remark', item.id)" class="action-btn remark-btn pixel-button">[备注]</button>
     </div>
   </div>

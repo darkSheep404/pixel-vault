@@ -60,5 +60,9 @@ export const usePurchaseStore = defineStore('purchases', {
       this.purchases = this.purchases.filter(item => item.id !== id);
       this.savePurchases();
     },
+    replaceAll(newList) {
+      this.purchases = Array.isArray(newList) ? newList : [];
+      this.savePurchases();
+    },
   },
 });

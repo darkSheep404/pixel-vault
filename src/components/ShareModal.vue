@@ -95,18 +95,6 @@ export default defineComponent({
     const previewRef = ref(null);
     const templates = ref([
       {
-        id: 'pixel',
-        name: '像素游戏风',
-        fontFamily: "'Press Start 2P', 'Silkscreen', monospace",
-        bg: '#222',
-        color: '#fff',
-        border: '4px solid #fff',
-        icon: pixelIcon,
-        qrBg: '#222',
-        qrFg: '#fff',
-        noRadius: true
-      },
-      {
         id: 'stardew',
         name: '星露谷风格',
         fontFamily: "'VT323', 'Silkscreen', monospace",
@@ -117,6 +105,18 @@ export default defineComponent({
         qrBg: '#fffbe6',
         qrFg: '#5b3a1b',
         noRadius: false
+      },
+      {
+        id: 'pixel',
+        name: '像素游戏风',
+        fontFamily: "'Press Start 2P', 'Silkscreen', monospace",
+        bg: '#222',
+        color: '#fff',
+        border: '4px solid #fff',
+        icon: pixelIcon,
+        qrBg: '#222',
+        qrFg: '#fff',
+        noRadius: true
       },
       {
         id: 'ios',

@@ -3,8 +3,11 @@
     <div class="view-header-pixel pixel-border-bottom">
       <h2 class="pixel-page-title">装备库 现实好物</h2>
       <div class="view-header-actions-pixel">
-        <button @click="openShareAllModal" class="pixel-button share-all-btn-pixel">[分享全部]</button>
+        <button @click="openShareAllModal" class="pixel-button share-all-btn-pixel">[分享图]</button>
         <button @click="openAddModal" class="pixel-button add-btn-pixel">[添加]</button>
+        <button @click="handleExport" class="pixel-button export-btn-pixel">[导出]</button>
+        <button @click="triggerImport" class="pixel-button import-btn-pixel">[导入]</button>
+        <input ref="importInput" type="file" accept=".xlsx,.xls" style="display:none" @change="handleImport" />
       </div>
     </div>
 
@@ -100,12 +103,23 @@
     <!-- 批量分享 -->
     <ShareModal v-if="showShareAllPopup" :show="showShareAllPopup" :items="purchases" :pageTitle="'购买管理'" @close="closeShareAllModal" />
 
+    <!-- 导入成功弹窗 -->
+    <div v-if="showImportSuccess" class="pixel-modal-overlay">
+      <div class="pixel-modal-content pixel-border">
+        <div class="pixel-modal-title">[导入成功]</div>
+        <div class="pixel-modal-body">数据已成功导入！</div>
+        <button class="pixel-button" @click="showImportSuccess = false">[关闭]</button>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script>
 import { defineComponent, ref, computed, onMounted } from 'vue';
 import { usePurchaseStore } from '../store/purchases';
+import { useSubscriptionStore } from '../store/subscriptions';
+import { exportAllToExcel, importAllFromExcel } from '../utils/excel';
 import ItemCard from '../components/ItemCard.vue';
 import ShareModal from '../components/ShareModal.vue';
 
@@ -122,6 +136,7 @@ export default defineComponent({
   components: { ItemCard, ShareModal },
   setup() {
     const store = usePurchaseStore();
+    const subscriptionStore = useSubscriptionStore();
     const isLoading = ref(false);
     const showModal = ref(false);
     const isEditing = ref(false);
@@ -131,11 +146,15 @@ export default defineComponent({
     const showSingleSharePopup = ref(false);
     const showShareAllPopup = ref(false);
     const itemToShare = ref(null);
+    const importInput = ref(null);
 
     // 备注编辑相关
     const showRemarkModal = ref(false);
     const remarkDraft = ref('');
     const remarkEditId = ref(null);
+
+    // 导入成功弹窗相关
+    const showImportSuccess = ref(false);
 
     onMounted(async () => {
       isLoading.value = true;
@@ -254,6 +273,25 @@ export default defineComponent({
       }
     };
 
+    const handleExport = () => {
+      exportAllToExcel(subscriptionStore.subscriptions, store.purchases);
+    };
+
+    const triggerImport = () => {
+      importInput.value && importInput.value.click();
+    };
+
+    const handleImport = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      importAllFromExcel(file, ({ subscriptions, purchases }) => {
+        subscriptionStore.replaceAll(subscriptions);
+        store.replaceAll(purchases);
+        showImportSuccess.value = true;
+      });
+      e.target.value = '';
+    };
+
     return {
       purchases, isLoading, showModal, isEditing, currentItem,
       openAddModal, openEditModal, closeModal, handleSubmit, confirmDelete,
@@ -261,7 +299,10 @@ export default defineComponent({
       handleImageUpload, showSingleSharePopup, itemToShare, openShareModal, closeSingleShareModal,
       showShareAllPopup, openShareAllModal, closeShareAllModal,
       // 备注相关
-      showRemarkModal, remarkDraft, openRemarkModal, closeRemarkModal, saveRemark
+      showRemarkModal, remarkDraft, openRemarkModal, closeRemarkModal, saveRemark,
+      handleExport, triggerImport, handleImport, importInput,
+      // 导入成功弹窗相关
+      showImportSuccess
     };
   },
 });
@@ -295,7 +336,7 @@ export default defineComponent({
   margin: 0;
 }
 
-.add-btn-pixel, .share-all-btn-pixel {
+.add-btn-pixel, .share-all-btn-pixel, .export-btn-pixel, .import-btn-pixel {
   font-size: 12px;
   padding: 6px 10px;
 }
@@ -497,5 +538,37 @@ export default defineComponent({
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
+}
+
+/* 导入成功弹窗样式 */
+.pixel-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.pixel-modal-content {
+  background: var(--app-bg-color);
+  border: 2px solid var(--primary-color);
+  padding: 24px 32px;
+  min-width: 220px;
+  text-align: center;
+  font-family: 'Press Start 2P', 'Silkscreen', sans-serif;
+  color: var(--primary-color);
+  box-shadow: 0 0 0 4px var(--border-color);
+}
+.pixel-modal-title {
+  font-size: 18px;
+  margin-bottom: 12px;
+}
+.pixel-modal-body {
+  font-size: 14px;
+  margin-bottom: 16px;
 }
 </style>
