@@ -1,0 +1,258 @@
+/* src/style.css - Pixel Art Style */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen&display=swap');
+
+:root {
+  /* --- Base Settings --- */
+  font-family: 'Silkscreen', 'Press Start 2P', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5; /* Or 1 for tighter pixel feel, adjust based on font */
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeSpeed; /* Prioritize speed and crispness over legibility for pixel fonts */
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale; /* Still can sometimes cause blur, but 'none' is better */
+  image-rendering: pixelated; /* Crucial for pixel art images */
+  image-rendering: -moz-crisp-edges; /* Firefox */
+  image-rendering: crisp-edges; /* Standard */
+
+  /* --- Light Theme Pixel Colors (as per ui_ux_design_spec.md V3) --- */
+  --pixel-primary-light: #4A90E2; /* Bright Pixel Blue */
+  --pixel-accent-light: #F5A623;  /* Pixel Orange-Yellow */
+  --pixel-success-light: #7ED321; /* Pixel Green */
+  --pixel-error-light: #D0021B;   /* Pixel Red */
+  --pixel-bg-light: #FFFFFF;      /* Pure White */
+  --pixel-card-bg-light: #F0F0F0; /* Light Pixel Grey */
+  --pixel-border-light: #B8B8B8;  /* Medium Pixel Grey */
+  --pixel-text-secondary-light: #505050; /* Dark Pixel Grey */
+  --pixel-text-primary-light: #000000;   /* Pure Black */
+
+  /* --- Dark Theme Pixel Colors (as per ui_ux_design_spec.md V3) --- */
+  --pixel-primary-dark: #5DAEFF; /* Highlighted Pixel Blue */
+  --pixel-accent-dark: #FFB84D;  /* Highlighted Pixel Orange-Yellow */
+  --pixel-success-dark: #9BFF4A; /* Highlighted Pixel Green */
+  --pixel-error-dark: #FF4D64;   /* Highlighted Pixel Red */
+  --pixel-bg-dark: #1E1E1E;      /* Deep Black */
+  --pixel-card-bg-dark: #2C2C2C; /* Dark Pixel Grey/Black */
+  --pixel-border-dark: #6E6E6E;  /* Medium-Dark Pixel Grey */
+  --pixel-text-secondary-dark: #A0A0A0; /* Light-Dark Pixel Grey */
+  --pixel-text-primary-dark: #E0E0E0;   /* Very Light Pixel Grey/Bright White */
+
+  /* Default to Light Theme */
+  --primary-color: var(--pixel-primary-light);
+  --accent-color: var(--pixel-accent-light);
+  --success-color: var(--pixel-success-light);
+  --error-color: var(--pixel-error-light);
+  --app-bg-color: var(--pixel-bg-light);
+  --card-bg-color: var(--pixel-card-bg-light);
+  --border-color: var(--pixel-border-light);
+  --text-secondary-color: var(--pixel-text-secondary-light);
+  --text-primary-color: var(--pixel-text-primary-light);
+  --toolbar-bg-color: var(--pixel-card-bg-light); /* Or a slightly different shade */
+  --toolbar-border-color: var(--pixel-border-light);
+  --button-bg-color: var(--pixel-primary-light);
+  --button-text-color: var(--pixel-bg-light); /* White text on blue button */
+  --button-border-color: var(--pixel-text-primary-light); /* Black border for buttons */
+}
+
+.dark-theme {
+  --primary-color: var(--pixel-primary-dark);
+  --accent-color: var(--pixel-accent-dark);
+  --success-color: var(--pixel-success-dark);
+  --error-color: var(--pixel-error-dark);
+  --app-bg-color: var(--pixel-bg-dark);
+  --card-bg-color: var(--pixel-card-bg-dark);
+  --border-color: var(--pixel-border-dark);
+  --text-secondary-color: var(--pixel-text-secondary-dark);
+  --text-primary-color: var(--pixel-text-primary-dark);
+  --toolbar-bg-color: var(--pixel-card-bg-dark);
+  --toolbar-border-color: var(--pixel-border-dark);
+  --button-bg-color: var(--pixel-primary-dark);
+  --button-text-color: var(--pixel-bg-dark); /* Black text on blue button for dark theme */
+  --button-border-color: var(--pixel-text-primary-dark); /* Light border for buttons */
+}
+
+body {
+  margin: 0;
+  display: flex; /* Keep for centering app, but app itself will control layout */
+  place-items: center; /* Keep for centering app */
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--app-bg-color);
+  color: var(--text-primary-color);
+  font-family: 'Silkscreen', 'Press Start 2P', sans-serif; /* Ensure pixel font is primary */
+  font-size: 16px; /* Base size, components will adjust */
+  image-rendering: pixelated;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box; /* Essential for pixel-perfect layouts */
+  /* Remove anti-aliasing where possible */
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset; /* or grayscale if none isn't supported well */
+  text-rendering: optimizeSpeed;
+  shape-rendering: crispEdges; /* For SVG */
+}
+
+img {
+ image-rendering: pixelated;
+ image-rendering: -moz-crisp-edges;
+ image-rendering: crisp-edges;
+}
+
+a {
+  font-weight: normal; /* Pixel fonts often have one weight */
+  color: var(--primary-color);
+  text-decoration: none; /* Or underline with 1px solid */
+  border-bottom: 1px solid var(--primary-color); /* Pixel-style underline */
+}
+a:hover {
+  color: var(--accent-color);
+  border-bottom-color: var(--accent-color);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Press Start 2P', 'Silkscreen', sans-serif; /* Titles with more distinct pixel font */
+  margin: 16px 0 8px 0; /* Pixel-friendly margins */
+  line-height: 1.2;
+  color: var(--text-primary-color);
+}
+
+h1 { font-size: 24px; } /* Adjust based on chosen pixel font's appearance */
+h2 { font-size: 20px; }
+h3 { font-size: 16px; }
+
+button {
+  border: 1px solid var(--button-border-color);
+  padding: 8px 12px; /* Pixel-friendly padding */
+  font-size: 1em; /* Inherit from body or set specifically */
+  font-family: inherit;
+  background-color: var(--button-bg-color);
+  color: var(--button-text-color);
+  cursor: pointer;
+  transition: none; /* No smooth transitions for pixel style */
+  box-shadow: none; /* No smooth shadows */
+  border-radius: 0; /* Hard edges */
+  text-transform: uppercase; /* Common in pixel UIs */
+}
+
+button:hover {
+  background-color: var(--accent-color);
+  color: var(--pixel-text-primary-light); /* Ensure contrast */
+  border-color: var(--pixel-text-primary-light);
+}
+
+button:active {
+  /* Simple pressed effect, e.g., invert colors or slight shift */
+  background-color: var(--text-primary-color);
+  color: var(--app-bg-color);
+  border-color: var(--text-primary-color);
+  transform: translate(1px, 1px); /* Optional: 1px shift for pressed feel */
+}
+
+button:disabled {
+    background-color: var(--pixel-border-light); /* Using light theme border as disabled bg */
+    color: var(--pixel-text-secondary-light);
+    border-color: var(--pixel-text-secondary-light);
+    cursor: not-allowed;
+}
+.dark-theme button:disabled {
+    background-color: var(--pixel-border-dark);
+    color: var(--pixel-text-secondary-dark);
+    border-color: var(--pixel-text-secondary-dark);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="month"],
+textarea,
+select {
+  font-family: inherit;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--app-bg-color);
+  color: var(--text-primary-color);
+  border-radius: 0; /* Hard edges */
+  box-shadow: none;
+  font-size: 1em;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="month"]:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--primary-color); /* Pixel-style focus ring */
+}
+
+input[type="checkbox"] {
+  /* Basic pixel checkbox styling, can be enhanced with custom images */
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border-color);
+  background-color: var(--app-bg-color);
+  cursor: pointer;
+  position: relative;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+input[type="checkbox"]:checked::after {
+  content: '';
+  display: block;
+  width: 8px; /* Adjust size of checkmark */
+  height: 8px;
+  background-color: var(--primary-color);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* General Card Style (to be refined in ItemCard.vue) */
+.item-card-placeholder {
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg-color);
+  padding: 16px;
+  margin-bottom: 16px;
+  /* Add blocky shadow if desired, e.g. border-right: 2px solid #000; border-bottom: 2px solid #000; */
+}
+
+#app {
+  width: 100%;
+  max-width: 1280px; /* Or adjust for mobile-first pixel design */
+  margin: 0 auto;
+  padding: 0; /* App.vue will handle its own padding */
+  text-align: left; /* Default to left, components can center if needed */
+  background-color: var(--app-bg-color);
+  min-height: 100vh;
+}
+
+/* Utility for pixel-perfect borders if needed */
+.pixel-border {
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--border-color);
+}
+
+/* Hide scrollbars if they don't fit pixel aesthetic, or style them (browser support varies) */
+/* ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--card-bg-color);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border: 1px solid var(--card-bg-color);
+} */
+
+

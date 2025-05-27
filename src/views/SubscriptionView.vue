@@ -1,0 +1,492 @@
+<template>
+  <div class="view-container-pixel">
+    <div class="view-header-pixel pixel-border-bottom">
+      <h2 class="pixel-page-title">订阅管理</h2>
+      <div class="view-header-actions-pixel">
+        <button @click="openShareAllModal" class="pixel-button share-all-btn-pixel">[分享全部]</button>
+        <button @click="openAddModal" class="pixel-button add-btn-pixel">[添加]</button>
+      </div>
+    </div>
+
+    <div v-if="isLoading" class="loading-indicator-pixel pixel-text">加载中...</div>
+    <div v-else-if="subscriptions.length === 0" class="empty-state-pixel pixel-text">
+      <p>无订阅记录</p>
+      <p class="empty-icon-pixel">[空]</p>
+    </div>
+
+    <div v-else class="items-grid-pixel">
+      <ItemCard 
+        v-for="sub in subscriptions" 
+        :key="sub.id" 
+        :item="sub" 
+        :show-details-button="true"
+        @edit="openEditModal(sub.id)" 
+        @delete="confirmDelete(sub.id)"
+        @view-details="openDetailsModal(sub.id)"
+        @share="openShareModal(sub)"
+      />
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div v-if="showModal" class="modal-overlay-pixel" @click.self="closeModal">
+      <div class="modal-content-pixel pixel-border">
+        <h3 class="pixel-title">{{ isEditing ? '[编辑订阅]' : '[添加订阅]' }}</h3>
+        <form @submit.prevent="handleSubmit" class="pixel-form">
+          <div>
+            <label for="platformName" class="pixel-label">平台名:</label>
+            <input type="text" id="platformName" v-model="currentSubscription.platformName" required class="pixel-input">
+          </div>
+          <div>
+            <label for="subscriptionType" class="pixel-label">类型:</label>
+            <input type="text" id="subscriptionType" v-model="currentSubscription.subscriptionType" required class="pixel-input">
+          </div>
+          <div>
+            <label for="cost" class="pixel-label">费用:</label>
+            <input type="number" id="cost" v-model.number="currentSubscription.cost" required min="0" class="pixel-input">
+          </div>
+          <div>
+            <label for="billingCycle" class="pixel-label">周期:</label>
+            <select id="billingCycle" v-model="currentSubscription.billingCycle" class="pixel-select">
+              <option value="monthly">每月</option>
+              <option value="annually">每年</option>
+              <option value="onetime">一次性</option>
+            </select>
+          </div>
+          <div>
+            <label for="startDate" class="pixel-label">开始日:</label>
+            <input type="date" id="startDate" v-model="currentSubscription.startDate" required class="pixel-input">
+          </div>
+          <div>
+            <label for="endDate" class="pixel-label">结束日:</label>
+            <input type="date" id="endDate" v-model="currentSubscription.endDate" class="pixel-input">
+          </div>
+          <div class="pixel-checkbox-group">
+            <input type="checkbox" id="autoRenewStatus" v-model="currentSubscription.autoRenewStatus" class="pixel-checkbox">
+            <label for="autoRenewStatus" class="pixel-label-inline">自动续费</label>
+          </div>
+          <div>
+            <label for="platformIcon" class="pixel-label">图标URL:</label>
+            <input type="text" id="platformIcon" v-model="currentSubscription.platformIcon" placeholder="图片URL或Base64" class="pixel-input">
+            <label for="platformIconFile" class="pixel-label pixel-file-label">或上传:</label>
+            <input type="file" id="platformIconFile" @change="handleImageUpload($event, 'platformIcon')" accept="image/*" class="pixel-file-input">
+             <div v-if="currentSubscription.platformIcon" class="image-preview-modal-pixel pixel-border">
+                <img :src="currentSubscription.platformIcon" alt="预览" class="pixel-image" />
+            </div>
+          </div>
+          <div class="modal-actions-pixel">
+            <button type="button" @click="closeModal" class="pixel-button cancel-btn">[取消]</button>
+            <button type="submit" class="pixel-button submit-btn">{{ isEditing ? '[更新]' : '[添加]' }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Details Modal -->
+    <div v-if="showDetailsPopup" class="modal-overlay-pixel" @click.self="closeDetailsModal">
+        <div class="modal-content-pixel details-popup-pixel pixel-border">
+            <h3 class="pixel-title">[订阅详情]</h3>
+            <div v-if="selectedSubscriptionDetails" class="pixel-text">
+                <div v-if="selectedSubscriptionDetails.platformIcon" class="details-image-container-pixel pixel-border">
+                    <img :src="selectedSubscriptionDetails.platformIcon" :alt="selectedSubscriptionDetails.platformName" class="pixel-image">
+                </div>
+                <p><strong>平台:</strong> {{ selectedSubscriptionDetails.platformName }}</p>
+                <p><strong>类型:</strong> {{ selectedSubscriptionDetails.subscriptionType }}</p>
+                <p><strong>费用:</strong> {{ selectedSubscriptionDetails.cost }}元 {{ selectedSubscriptionDetails.billingCycle === 'monthly' ? '/月' : (selectedSubscriptionDetails.billingCycle === 'annually' ? '/年' : '(一次性)') }}</p>
+                <p><strong>开始:</strong> {{ formatDate(selectedSubscriptionDetails.startDate) }}</p>
+                <p v-if="selectedSubscriptionDetails.endDate"><strong>结束:</strong> {{ formatDate(selectedSubscriptionDetails.endDate) }}</p>
+                <p><strong>续费:</strong> {{ selectedSubscriptionDetails.autoRenewStatus ? '开启' : '关闭' }}</p>
+                <p><strong>总消费:</strong> {{ selectedSubscriptionDetails.totalSpent?.toFixed(2) }} 元</p>
+                <p><strong>2025消费:</strong> {{ selectedSubscriptionDetails.spentIn2025?.toFixed(2) }} 元</p>
+            </div>
+            <button @click="closeDetailsModal" class="pixel-button close-details-btn-pixel">[关闭]</button>
+        </div>
+    </div>
+
+    <!-- 单个项目分享 -->
+    <ShareModal v-if="showSingleSharePopup" :show="showSingleSharePopup" :item="itemToShare" @close="closeSingleShareModal" />
+    
+    <!-- 批量分享 -->
+    <ShareModal v-if="showShareAllPopup" :show="showShareAllPopup" :items="subscriptions" :pageTitle="'订阅管理'" @close="closeShareAllModal" />
+
+  </div>
+</template>
+
+<script>
+// Script remains largely the same, only template and style changes for pixel art
+import { defineComponent, ref, computed, onMounted } from 'vue';
+import { useSubscriptionStore } from '../store/subscriptions';
+import ItemCard from '../components/ItemCard.vue';
+import ShareModal from '../components/ShareModal.vue';
+
+const newEmptySubscription = () => ({
+  platformName: '',
+  subscriptionType: '',
+  cost: 0,
+  billingCycle: 'monthly',
+  autoRenewStatus: false,
+  startDate: new Date().toISOString().split('T')[0],
+  endDate: '',
+  platformIcon: '',
+});
+
+export default defineComponent({
+  name: 'SubscriptionView',
+  components: { ItemCard, ShareModal },
+  setup() {
+    const store = useSubscriptionStore();
+    const isLoading = ref(false);
+    const showModal = ref(false);
+    const isEditing = ref(false);
+    const currentSubscription = ref(newEmptySubscription());
+    const showDetailsPopup = ref(false);
+    const selectedSubscriptionDetails = ref(null);
+    const showSingleSharePopup = ref(false);
+    const showShareAllPopup = ref(false);
+    const itemToShare = ref(null);
+
+    onMounted(async () => {
+      isLoading.value = true;
+      await store.loadSubscriptions(); 
+      isLoading.value = false;
+    });
+
+    const subscriptions = computed(() => store.getSubscriptionsWithCalculatedCosts);
+
+    const openAddModal = () => {
+      isEditing.value = false;
+      currentSubscription.value = newEmptySubscription();
+      showModal.value = true;
+    };
+
+    const openEditModal = (id) => {
+      const subToEdit = store.getSubscriptionById(id);
+      if (subToEdit) {
+        isEditing.value = true;
+        currentSubscription.value = { ...subToEdit };
+        showModal.value = true;
+      }
+    };
+
+    const closeModal = () => {
+      showModal.value = false;
+    };
+
+    const handleSubmit = () => {
+      if (isEditing.value && currentSubscription.value.id) {
+        store.updateSubscription(currentSubscription.value);
+      } else {
+        store.addSubscription(currentSubscription.value);
+      }
+      closeModal();
+    };
+
+    const confirmDelete = (id) => {
+      // Using simple confirm for pixel style, can be replaced with custom pixel modal
+      if (window.confirm('确定删除?')) {
+        store.deleteSubscription(id);
+      }
+    };
+    
+    const openDetailsModal = (id) => {
+        const sub = store.getSubscriptionsWithCalculatedCosts.find(s => s.id === id);
+        if (sub) {
+            selectedSubscriptionDetails.value = sub;
+            showDetailsPopup.value = true;
+        }
+    };
+
+    const closeDetailsModal = () => {
+        showDetailsPopup.value = false;
+        selectedSubscriptionDetails.value = null;
+    };
+
+    const openShareModal = (item) => {
+        itemToShare.value = item;
+        showSingleSharePopup.value = true;
+    };
+
+    const closeSingleShareModal = () => {
+        showSingleSharePopup.value = false;
+        itemToShare.value = null;
+    };
+    
+    const openShareAllModal = () => {
+        showShareAllPopup.value = true;
+    };
+    
+    const closeShareAllModal = () => {
+        showShareAllPopup.value = false;
+    };
+
+    const formatDate = (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    };
+
+    const handleImageUpload = (event, fieldName) => {
+      const target = event.target;
+      if (target.files && target.files[0]) {
+        const file = target.files[0];
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target?.result) {
+            currentSubscription.value[fieldName] = e.target.result;
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+
+    return {
+      subscriptions, isLoading, showModal, isEditing, currentSubscription,
+      openAddModal, openEditModal, closeModal, handleSubmit, confirmDelete,
+      showDetailsPopup, selectedSubscriptionDetails, openDetailsModal, closeDetailsModal, formatDate,
+      handleImageUpload, showSingleSharePopup, itemToShare, openShareModal, closeSingleShareModal,
+      showShareAllPopup, openShareAllModal, closeShareAllModal
+    };
+  },
+});
+</script>
+
+<style scoped>
+/* Pixel Art Styles for SubscriptionView */
+.view-container-pixel {
+  padding: 8px;
+  font-family: 'Silkscreen', 'Press Start 2P', sans-serif;
+}
+
+.view-header-pixel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.view-header-actions-pixel {
+  display: flex;
+  gap: 8px;
+}
+
+.pixel-page-title {
+  font-family: 'Press Start 2P', 'Silkscreen', sans-serif;
+  color: var(--primary-color);
+  font-size: 18px; 
+  margin: 0;
+}
+
+.add-btn-pixel, .share-all-btn-pixel {
+  /* Uses global .pixel-button styles */
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+.items-grid-pixel {
+  display: grid;
+  /* For mobile, usually single column. For larger screens, can adjust */
+  grid-template-columns: 1fr; 
+  gap: 8px;
+}
+
+@media (min-width: 600px) { /* Example breakpoint for 2 columns */
+  .items-grid-pixel {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+.loading-indicator-pixel, .empty-state-pixel {
+  text-align: center;
+  margin-top: 24px;
+  color: var(--text-secondary-color);
+  font-size: 12px;
+}
+
+.empty-state-pixel p {
+  margin-bottom: 8px;
+}
+
+.empty-icon-pixel {
+  font-family: 'Press Start 2P', 'Silkscreen', sans-serif;
+  font-size: 24px;
+  opacity: 0.7;
+}
+
+/* Modal styles (reusing from ShareModal pixel styles where applicable) */
+.modal-overlay-pixel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure it's below ShareModal if both can appear, or manage z-index carefully */
+  padding: 8px;
+}
+
+.modal-content-pixel {
+  background-color: var(--app-bg-color);
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  width: 95%;
+  max-width: 320px; /* Consistent with ShareModal */
+  max-height: 90vh;
+  overflow-y: auto;
+  color: var(--text-primary-color);
+}
+
+.pixel-title {
+  font-family: 'Press Start 2P', 'Silkscreen', sans-serif;
+  font-size: 14px;
+  color: var(--primary-color);
+  margin-top: 0;
+  margin-bottom: 10px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 6px;
+}
+
+.pixel-form div {
+  margin-bottom: 8px;
+}
+
+.pixel-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+}
+
+.pixel-label-inline {
+    display: inline-block;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.pixel-input, .pixel-select {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg-color); /* Or app-bg-color */
+  color: var(--text-primary-color);
+  font-family: 'Silkscreen', 'Press Start 2P', sans-serif;
+  font-size: 12px;
+  border-radius: 0;
+  box-sizing: border-box;
+}
+
+.pixel-file-label {
+    margin-top: 6px;
+}
+
+.pixel-file-input {
+    font-size: 10px;
+    margin-top: 2px;
+    display: block;
+    color: var(--text-secondary-color);
+}
+
+.pixel-checkbox-group {
+    display: flex;
+    align-items: center;
+}
+
+.pixel-checkbox {
+  /* Using global checkbox style from style.css */
+  vertical-align: middle;
+}
+
+.image-preview-modal-pixel {
+    margin-top: 6px;
+    max-width: 100%;
+    height: 64px; /* Fixed height for preview */
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--card-bg-color);
+}
+.image-preview-modal-pixel img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.modal-actions-pixel {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+}
+
+.modal-actions-pixel .pixel-button {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.modal-actions-pixel .cancel-btn {
+  background-color: var(--text-secondary-color);
+  color: var(--app-bg-color);
+  border-color: var(--text-secondary-color);
+}
+.dark-theme .modal-actions-pixel .cancel-btn {
+    color: var(--pixel-bg-dark);
+}
+
+/* Details Popup Styles */
+.details-popup-pixel {
+    /* Uses .modal-content-pixel base */
+}
+
+.details-image-container-pixel {
+    width: 100%;
+    height: 128px; /* Fixed height */
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--card-bg-color);
+}
+.details-image-container-pixel img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.details-popup-pixel .pixel-text p {
+    margin: 4px 0;
+    font-size: 10px;
+    line-height: 1.4;
+}
+.details-popup-pixel .pixel-text strong {
+    color: var(--primary-color);
+    font-weight: normal; /* Pixel fonts often have one weight */
+}
+
+.close-details-btn-pixel {
+    display: block;
+    margin: 12px auto 0;
+    /* Uses global .pixel-button */
+    background-color: var(--accent-color);
+    color: var(--pixel-text-primary-light);
+    border-color: var(--accent-color);
+    padding: 6px 12px;
+    font-size: 12px;
+}
+.dark-theme .close-details-btn-pixel {
+    color: var(--pixel-text-primary-dark);
+}
+
+.pixel-border {
+  border: 1px solid var(--border-color);
+}
+.pixel-border-bottom {
+  border-bottom: 1px solid var(--border-color);
+}
+
+</style>
