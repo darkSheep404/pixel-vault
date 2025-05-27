@@ -108,8 +108,8 @@
                 <p><strong>开始:</strong> {{ formatDate(selectedSubscriptionDetails.startDate) }}</p>
                 <p v-if="selectedSubscriptionDetails.endDate"><strong>结束:</strong> {{ formatDate(selectedSubscriptionDetails.endDate) }}</p>
                 <p><strong>续费:</strong> {{ selectedSubscriptionDetails.autoRenewStatus ? '开启' : '关闭' }}</p>
-                <p><strong>总消费:</strong> {{ selectedSubscriptionDetails.totalSpent?.toFixed(2) }} 元</p>
-                <p><strong>2025消费:</strong> {{ selectedSubscriptionDetails.spentIn2025?.toFixed(2) }} 元</p>
+                <p><strong>已消费:</strong> {{ selectedSubscriptionDetails.totalSpent?.toFixed(2) }} 元</p>
+                <p><strong>预计年度消费:</strong> {{ selectedSubscriptionDetails.spentIn2025?.toFixed(2) }} 元</p>
                 <p v-if="selectedSubscriptionDetails.evaluation"><strong>备注:</strong> "{{ selectedSubscriptionDetails.evaluation }}"</p>
             </div>
             <button @click="closeDetailsModal" class="pixel-button close-details-btn-pixel">[关闭]</button>
