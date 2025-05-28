@@ -34,7 +34,14 @@
                   </div>
                 </div>
                 <div class="pixel-share-footer">
-                  <img :src="qrImgMap[template.id]" class="pixel-qrcode" alt="二维码" v-if="qrImgMap[template.id]" />
+                  <QrcodeVue
+                    :value="qrUrl"
+                    :size="64"
+                    :background="getTemplateById(template.id).qrBg"
+                    :foreground="getTemplateById(template.id).qrFg"
+                    class="pixel-qrcode"
+                    render-as="canvas"
+                  />
                   <div class="pixel-qrcode-tip">扫码访问地球Online装备库</div>
                 </div>
               </div>
@@ -69,17 +76,16 @@ import { defineComponent, ref, watch, nextTick, onMounted } from 'vue';
 import { Swiper, SwiperSlide } from 'swiper/vue';
 import 'swiper/swiper-bundle.css';
 import html2canvas from 'html2canvas';
-import qrcode from 'qrcode';
-
-// 可根据实际情况替换为本地icon
-const stardewIcon = 'https://cdn2.steamgriddb.com/icon/2119b8d43eafcf353e07d7cb5554170b/32/64x64.png';
-const win98Icon = 'https://64.media.tumblr.com/c14680f551bb7173c2ef8c1624f8a13d/591683af0d9ad990-00/s540x810/01a0fc73ccf559c20dd0a67b2b3550c2f0efa4d7.png';
-const pixelIcon = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAL8AAACUCAMAAAD1XwjBAAAA/FBMVEX////+AAAAAAD/AADw8PCVAAAKCgpIAACPj4/VAADKAAAPDw+qqqrdAACwsLAfHx/o6OjqAAD/4OBbW1u/v7+CgoL4AAD+U1NvAADyAADS0tJAAAClAADEAACPAABmZmZ1dXWhoaF/AAA3AAAmJiYYAABDQ0P/w8OHAAD/9/dOAAD+PT0nAAD+hIT/fX0uAAD+SEj/7Oz+rKz+JiYwMDD+GBgAISGpkZGVFhalgYGfdXWaQ0NkcHBkAABwenpwVVXGJyf/b29lVla9KipPX1/+kpL/0dH/uLj+YmKkQkIbKChyIiJGIyOsn5+AGBiPS0ufXV00HR1WPj5YNDR/HZQXAAADmUlEQVR4nO3cbVfaMBgGYKH4AtRCFZjUIiLgfJtO0b25Td2czk2nm///v+zDzPNk53QmtClp531/7GmeXC2c00CSTk0hCPJoSmPEXC1j/KBanNFMsaGo1dMtVezWjflrRe2o/K52pUX44Ycffvht+1/Z8HeTPYBLDU/k9Ztp7bylVq5Uy6Wj77QrHd9QoyCGv96lO7HUcrSzwTdQ8vPBae1K5T41Wk3sL+hFy69Zyoa/oOHXrQQ//PDDP55/JSv+0ntq/mEM/5rCv6HvH1Kjj9rq3qLIyem8iC+VPVuIyMUZ9epzKyq1+Ek6qu1vUZv5z+dUSjG+mqNrni3zo1wq+2IzotXmLnfL4Zu+40TWUlwAp8Kl3Iju/+WPqqryS/1zp3v66sgrYX8Vfvjhh/9J+YeW/UcvRba/sH8z4vkr97pM2bLsf3axLyLd/svRtsgoqlefY9u/EHXugarbGIOGLPmNBX744Yf/P/Nf5tG/cECJGvRk3v98dETJp39Savjhhx9++O379/PtH53tinyd2FPXoN9y4Lcb+O0Gfrt5kv7leWP/v8ZUR87/9h73Bz2Rm6tQpGOF71P/4bFLLO2lfPHWPxj0l3cIoL/+gRNv/YlJv431M/DDDz/8pv0TexKbW7+9Whv8ybfvflsk9U+iRT1Vrh/6H9SaMfyloCFy82NNJEzX77RD6urWI0Cc9f9SpP0Xayn7/SXqKuH+C9nP+1+0l28m96eyfwd++OGHf7L+quRPYyjBNdup+Lu0fP2W1rSX28YuwPHLomrllvpqmtvAX6d4fVpUWDHnD6nqtVeivozxpTTo4x12zPl508lhwqGOHf80+1X7V+GHH374c+8vdhKOJKSRCPsHKfuD1abIVYcSi+9z+zsqOpfy80tKkz+KOP+qOCG3T/mmq/zDWP4Oz0948MMPP/xP1F/QfxTzmdb91dpDBu0WRXUBdGIh/Cna2/EH9Hoeb2NFRDE/4LRDOvWOXgrkpvJTfYzM0Dehr/D7PCkUZ1IlpZCpOKvyL7Pf3P87SQO/3cBvN/DbjeyPGkrwsWz6D9dFfrVpzzvPD0g74cv3dOpcdvw8PxDsiX/y+zyUcJZo0uA+oFOzw5dS56+S5J+lg4eZVHOi/Vvstz1UUwR+u4HfbuC3m7/8lBz518X0//kVvXTPP6H1B+YWtaUe6U3J+UFL6bE/41+a6MBvN/DbDfx2A7/dBO5DvF4un78Ikv38BmEt3EdBjKcLAAAAAElFTkSuQmCC';
-const iosIcon = 'https://img.icons8.com/?size=100&id=gINNTdIsWR8p&format=png&color=000000';
+import QrcodeVue from 'qrcode.vue';
+// 本地化 icon 图片
+import stardewIcon from '../assets/stardew.png';
+import win98Icon from '../assets/win98.png';
+import pixelIcon from '../assets/pixel.png';
+import iosIcon from '../assets/ios.png';
 
 export default defineComponent({
   name: 'ShareModal',
-  components: { Swiper, SwiperSlide },
+  components: { Swiper, SwiperSlide, QrcodeVue },
   props: {
     show: Boolean,
     items: Array,
@@ -91,7 +97,6 @@ export default defineComponent({
     const selectedIndex = ref(0);
     const generatedImage = ref(null);
     const isGenerating = ref(false);
-    const qrImgMap = ref({});
     const previewRef = ref(null);
     const templates = ref([
       {
@@ -118,7 +123,6 @@ export default defineComponent({
         qrFg: '#fff',
         noRadius: true
       },
-      
       {
         id: 'ios',
         name: 'iOS风格',
@@ -146,28 +150,12 @@ export default defineComponent({
       }
     ]);
 
-    // 生成所有模板的二维码图片
-    const generateAllQRCodes = async () => {
-      for (const t of templates.value) {
-        qrImgMap.value[t.id] = await qrcode.toDataURL(qrUrl, {
-          margin: 0,
-          color: {
-            dark: t.qrFg,
-            light: t.qrBg
-          },
-          width: 64
-        });
-      }
-    };
-
     onMounted(() => {
-      generateAllQRCodes();
     });
 
     watch(() => props.show, (newShow) => {
       if (newShow) {
         generatedImage.value = null;
-        generateAllQRCodes();
       }
     });
 
@@ -229,24 +217,44 @@ export default defineComponent({
       isGenerating.value = true;
       generatedImage.value = null;
       await nextTick();
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
       const elementToCapture = document.getElementById(`share-card-for-capture-${template.id}`);
+      let originalBg = '';
       if (elementToCapture) {
+        // 检查是否是渐变背景
+        if (template.bg.startsWith('linear-gradient')) {
+          originalBg = elementToCapture.style.background;
+          // 临时用纯色
+          if (template.id === 'stardew') {
+            elementToCapture.style.background = '#f7e9b0';
+          } else if (template.id === 'ios') {
+            elementToCapture.style.background = '#f5f6fa';
+          }
+        }
         try {
           const canvas = await html2canvas(elementToCapture, {
             useCORS: true,
-            allowTaint: true,
-            backgroundColor: getTemplateById(template.id).bg,
+            backgroundColor: template.bg.startsWith('linear-gradient') 
+              ? (template.id === 'stardew' ? '#f7e9b0' : '#f5f6fa')
+              : template.bg,
             scale: 2,
             logging: false,
           });
           generatedImage.value = canvas.toDataURL('image/png');
           await nextTick();
-          // 自动滚动到预览区
           if (previewRef.value) {
             previewRef.value.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
-        } catch (error) {
+        } catch (e) {
+          console.log(e)
           alert('生成分享图失败，请检查控制台。');
+        } finally {
+          // 还原背景
+          if (template.bg.startsWith('linear-gradient')) {
+            elementToCapture.style.background = originalBg;
+          }
         }
       }
       isGenerating.value = false;
@@ -259,7 +267,7 @@ export default defineComponent({
 
     return {
       templates, selectedIndex, generatedImage, isGenerating,
-      generateImage, close, getTemplateStyles, getTemplateById, onImageError, formatItemDetail, onSlideChange, qrImgMap, getItemIcon, previewRef
+      generateImage, close, getTemplateStyles, getTemplateById, onImageError, formatItemDetail, onSlideChange, getItemIcon, previewRef, qrUrl
     };
   },
 });
