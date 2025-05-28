@@ -32,7 +32,7 @@ export default defineComponent({
   setup() {
     const theme = ref('light');
     const route = useRoute();
-    const appTitle = ref('订阅管理');
+    const appTitle = ref('APP会员');
 
     const updateTitle = () => {
       if (route.path === '/purchases') {

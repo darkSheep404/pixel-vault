@@ -1,8 +1,8 @@
-# 个人订阅与购买管理应用 UI/UX 设计规范 (V4 - 像素风实现)
+# 个人订阅与现实好物应用 UI/UX 设计规范 (V4 - 像素风实现)
 
 ## 1. 概述
 
-本文档定义了"个人订阅与购买管理"单页面应用 (SPA) 在采用**像素艺术风格 (Pixel Art Style)** 后的用户界面 (UI) 和用户体验 (UX) 设计规范，并总结了实际实现过程中的技术细节和最佳实践。目标是创建一个具有复古像素美感、用户友好且响应迅速的移动端优先应用程序。
+本文档定义了"个人订阅与现实好物"单页面应用 (SPA) 在采用**像素艺术风格 (Pixel Art Style)** 后的用户界面 (UI) 和用户体验 (UX) 设计规范，并总结了实际实现过程中的技术细节和最佳实践。目标是创建一个具有复古像素美感、用户友好且响应迅速的移动端优先应用程序。
 
 ## 2. 像素风设计核心原则与实现方法
 
@@ -135,8 +135,8 @@ const setThemeOnDocument = (newTheme) => {
       <h1 class="app-title">{{ appTitle }}</h1>
     </div>
     <nav class="toolbar-center">
-      <router-link to="/" class="nav-link pixel-button" active-class="active">订阅管理</router-link>
-      <router-link to="/purchases" class="nav-link pixel-button" active-class="active">购买管理</router-link>
+      <router-link to="/" class="nav-link pixel-button" active-class="active">APP会员</router-link>
+      <router-link to="/purchases" class="nav-link pixel-button" active-class="active">现实好物</router-link>
     </nav>
     <div class="toolbar-right">
       <button @click="toggleTheme" class="theme-toggle-btn pixel-button">

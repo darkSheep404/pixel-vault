@@ -101,7 +101,7 @@
     <ShareModal v-if="showSingleSharePopup" :show="showSingleSharePopup" :item="itemToShare" @close="closeSingleShareModal" />
     
     <!-- 批量分享 -->
-    <ShareModal v-if="showShareAllPopup" :show="showShareAllPopup" :items="purchases" :pageTitle="'购买管理'" @close="closeShareAllModal" />
+    <ShareModal v-if="showShareAllPopup" :show="showShareAllPopup" :items="purchases" :pageTitle="'现实好物'" @close="closeShareAllModal" />
 
     <!-- 导入成功弹窗 -->
     <div v-if="showImportSuccess" class="pixel-modal-overlay">

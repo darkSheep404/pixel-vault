@@ -29,7 +29,7 @@
                     <div class="pixel-share-item-content">
                       <span class="pixel-share-item-title">{{ item.itemName || item.platformName }}</span>
                       <span class="pixel-share-item-detail">{{ formatItemDetail(item) }}</span>
-                      <span v-if="item.remark" class="pixel-share-item-remark">{{ item.remark }}</span>
+                      <span v-if="item.evaluation || item.remark" class="pixel-share-item-remark">{{ item.evaluation || item.remark }}</span>
                     </div>
                   </div>
                 </div>
@@ -87,7 +87,7 @@ export default defineComponent({
   },
   emits: ['close'],
   setup(props, { emit }) {
-    const qrUrl = 'https://darksheep.xyz/pixel-vault/';
+    const qrUrl = 'https://www.darksheep.xyz/pixel-vault/';
     const selectedIndex = ref(0);
     const generatedImage = ref(null);
     const isGenerating = ref(false);
@@ -118,6 +118,7 @@ export default defineComponent({
         qrFg: '#fff',
         noRadius: true
       },
+      
       {
         id: 'ios',
         name: 'iOS风格',
@@ -195,9 +196,6 @@ export default defineComponent({
         position: 'relative',
       };
     };
-
-    const getQrBg = (templateId) => getTemplateById(templateId)?.qrBg || '#fff';
-    const getQrFg = (templateId) => getTemplateById(templateId)?.qrFg || '#222';
 
     const onSlideChange = (swiper) => {
       selectedIndex.value = swiper.activeIndex;

@@ -16,8 +16,8 @@
       <p v-if="item.autoRenewStatus !== undefined" class="item-detail">
         自动续费: <span :class="item.autoRenewStatus ? 'status-on-pixel' : 'status-off-pixel'">{{ item.autoRenewStatus ? '开启' : '关闭' }}</span>
       </p>
-      <p v-if="item.totalSpent !== undefined" class="item-detail">总消费: {{ item.totalSpent?.toFixed(2) }} 元</p>
-      <p v-if="item.spentIn2025 !== undefined" class="item-detail">2025消费: {{ item.spentIn2025?.toFixed(2) }} 元</p>
+      <p v-if="item.totalSpent !== undefined" class="item-detail">已消费: {{ item.totalSpent?.toFixed(2) }} 元</p>
+      <p v-if="item.spentIn2025 !== undefined" class="item-detail">预计年度消费: {{ item.spentIn2025?.toFixed(2) }} 元</p>
       <p v-if="item.evaluation" class="item-evaluation">备注: "{{ item.evaluation }}"</p>
     </div>
     <div class="item-card-actions">

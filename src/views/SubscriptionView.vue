@@ -100,7 +100,7 @@
     <!-- Details Modal -->
     <div v-if="showDetailsPopup" class="modal-overlay-pixel" @click.self="closeDetailsModal">
         <div class="modal-content-pixel details-popup-pixel pixel-border">
-            <h3 class="pixel-title">[订阅详情]</h3>
+            <h3 class="pixel-title">[会员详情]</h3>
             <div v-if="selectedSubscriptionDetails" class="pixel-text">
                 <div v-if="selectedSubscriptionDetails.platformIcon" class="details-image-container-pixel pixel-border">
                     <img :src="selectedSubscriptionDetails.platformIcon" :alt="selectedSubscriptionDetails.platformName" class="pixel-image">
@@ -123,7 +123,7 @@
     <ShareModal v-if="showSingleSharePopup" :show="showSingleSharePopup" :item="itemToShare" @close="closeSingleShareModal" />
     
     <!-- 批量分享 -->
-    <ShareModal v-if="showShareAllPopup" :show="showShareAllPopup" :items="subscriptions" :pageTitle="'订阅管理'" @close="closeShareAllModal" />
+    <ShareModal v-if="showShareAllPopup" :show="showShareAllPopup" :items="subscriptions" :pageTitle="'APP会员'" @close="closeShareAllModal" />
 
     <!-- 导入成功提示弹窗 -->
     <div v-if="showImportSuccess" class="pixel-modal-overlay">
