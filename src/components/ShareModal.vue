@@ -274,8 +274,8 @@ export default defineComponent({
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+@import url('../assets/googlefont-css2.css');
+@import url('../assets/googlefont-css2-02.css');
 .pixel-modal-overlay {
   position: fixed;
   top: 0; left: 0; width: 100vw; height: 100vh;
